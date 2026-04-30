@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kişisel Kasa v4</title>
+    <style>
+        :root { --ana-renk: #58a6ff; --arka-plan: #0d1117; --panel-arka: #161b22; --metin-gri: #8b949e; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--arka-plan); color: white; height: 100vh; overflow: hidden; }
+        
+        /* GİRİŞ VE KURULUM EKRANI */
+        .merkez-ekran { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px; }
+        .sifre-kutusu { width: 100%; max-width: 250px; padding: 15px; font-size: 32px; letter-spacing: 10px; text-align: center; border-radius: 15px; border: 2px solid #30363d; background: #0d1117; color: var(--ana-renk); outline: none; margin-bottom: 20px; }
+
+        /* ANA UYGULAMA */
+        #ana-uygulama { display: none; flex-direction: column; height: 100vh; }
+        .ust-bar { background: var(--panel-arka); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; }
+
+        /* SAYFALAR */
+        .sayfa-konteynir { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
+        .sayfa { display: none; }
+        .sayfa.aktif { display: block; }
+
+        /* NOT KARTLARI */
+        .not-kart { background: var(--panel-arka); padding: 15px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 10px; cursor: pointer; position: relative; }
+        .not-baslik { font-weight: bold; font-size: 16px; color: var(--ana-renk); display: block; margin-bottom: 5px; }
+        .not-ozet { font-size: 13px; color: var(--metin-gri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+
+        /* NAVİGASYON VE EDİTÖR */
+        #not-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--arka-plan); z-index: 1000; display: none; flex-direction: column; }
+        .alt-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--panel-arka); border-top: 1px solid #30363d; display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { color: var(--metin-gri); text-align: center; flex: 1; font-size: 12px; }
+        .nav-item.aktif { color: var(--ana-renk); }
+        .ekle-btn { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--ana-renk); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; border: none; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn:active { transform: scale(0.95); }
+        .galeri-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        .galeri-grid img, .galeri-grid video { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- ŞİFRE BELİRLEME EKRANI (İLK KEZ AÇILDIĞINDA) -->
+    <div id="kurulum-ekrani" class="merkez-ekran" style="display: none;">
+        <div style="font-size: 50px;">🆕</div>
+        <h2>Şifre Belirle</h2>
+        <p style="color: var(--metin-gri);">Uygulama için 4 haneli bir şifre seçin</p>
+        <input type="tel" id="yeni-sifre-input" class="sifre-kutusu" maxlength="4" placeholder="••••" inputmode="numeric">
+        <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="sifreKaydet()">ŞİFREYİ KAYDET</button>
+    </div>
+
+    <!-- GİRİŞ EKRANI -->
+    <div id="giris-ekrani" class="merkez-ekran" style="display: none;">
+        <div style="font-size: 50px;">🔒</div>
+        <h2>Güvenli Kasa</h2>
+        <input type="tel" id="sifre-input" class="sifre-kutusu" maxlength="4" placeholder="••••" inputmode="numeric">
+        <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="girisYap()">GİRİŞ (Enter)</button>
+    </div>
+
+    <!-- ANA UYGULAMA -->
+    <div id="ana-uygulama">
+        <div class="ust-bar">
+            <span style="font-weight: bold; font-size: 18px;">🛡️ Dosyalarım</span>
+            <button class="btn" style="background:#f85149; color:white; padding: 8px 15px;" onclick="location.reload()">KİLİTLE</button>
+        </div>
+
+        <div class="sayfa-konteynir">
+            <div id="sayfa-notlar" class="sayfa aktif"><div id="not-listesi"></div></div>
+            <div id="sayfa-galeri" class="sayfa">
+                <label style="background: #238636; padding: 15px; display: block; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: bold;">
+                    ➕ Medya Yükle
+                    <input type="file" multiple onchange="medyaYukle(event)" style="display:none">
+                </label>
+                <div id="galeri-grid" class="galeri-grid"></div>
+            </div>
+        </div>
+
+        <button id="yeni-not-btn" class="ekle-btn" onclick="yeniNotAc()">+</button>
+
+        <div class="alt-nav">
+            <div class="nav-item aktif" onclick="sayfaDegistir('notlar', this)"><span>📝</span><br>Notlar</div>
+            <div class="nav-item" onclick="sayfaDegistir('galeri', this)"><span>🖼️</span><br>Galeri</div>
+        </div>
+    </div>
+
+    <!-- EDİTÖR -->
+    <div id="not-editor">
+        <div style="padding:15px; display:flex; justify-content:space-between; background:var(--panel-arka)">
+            <button class="btn" onclick="editorKapat()">⬅ Geri</button>
+            <button class="btn" style="background:var(--ana-renk); color:white;" onclick="notKaydet()">Kaydet</button>
+        </div>
+        <input type="text" id="editor-baslik" placeholder="Başlık..." style="background:transparent; border:none; color:white; font-size:22px; padding:20px; outline:none; border-bottom:1px solid #30363d">
+        <textarea id="editor-metin" style="flex:1; padding:20px; background:transparent; border:none; color:white; font-size:16px; outline:none; resize:none;" placeholder="Notun..."></textarea>
+    </div>
+
+<script>
+    let db, currentNotId = null;
+
+    // Şifre Sistemi Kontrolü
+    window.onload = () => {
+        const kayitliSifre = localStorage.getItem('kasa_sifresi');
+        if (!kayitliSifre) {
+            document.getElementById('kurulum-ekrani').style.display = 'flex';
+            document.getElementById('yeni-sifre-input').focus();
+        } else {
+            document.getElementById('giris-ekrani').style.display = 'flex';
+            document.getElementById('sifre-input').focus();
+        }
+    };
+
+    // Yeni Şifre Kaydetme
+    function sifreKaydet() {
+        const yeniSifre = document.getElementById('yeni-sifre-input').value;
+        if (yeniSifre.length === 4) {
+            localStorage.setItem('kasa_sifresi', yeniSifre);
+            alert("Şifre başarıyla oluşturuldu!");
+            location.reload(); // Sayfayı yenileyerek giriş ekranına atar
+        } else {
+            alert("Lütfen 4 haneli bir şifre girin.");
+        }
+    }
+
+    // Giriş Fonksiyonu
+    function girisYap() {
+        const girilen = document.getElementById('sifre-input').value;
+        const asilSifre = localStorage.getItem('kasa_sifresi');
+        if (girilen === asilSifre) {
+            document.getElementById('giris-ekrani').style.display = 'none';
+            document.getElementById('ana-uygulama').style.display = 'flex';
+            verileriYukle();
+        } else {
+            alert("Şifre Yanlış!");
+            document.getElementById('sifre-input').value = "";
+        }
+    }
+
+    // Enter Tuşu Dinleyicileri
+    document.getElementById('sifre-input').addEventListener('keypress', (e) => { if(e.key==='Enter') girisYap(); });
+    document.getElementById('yeni-sifre-input').addEventListener('keypress', (e) => { if(e.key==='Enter') sifreKaydet(); });
+
+    // Sayfa Değiştirme
+    function sayfaDegistir(id, el) {
+        document.querySelectorAll('.sayfa').forEach(s => s.classList.remove('aktif'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('aktif'));
+        document.getElementById('sayfa-' + id).classList.add('aktif');
+        el.classList.add('aktif');
+        document.getElementById('yeni-not-btn').style.display = (id === 'notlar' ? 'flex' : 'none');
+    }
+
+    // --- NOTLAR ---
+    let notlar = JSON.parse(localStorage.getItem('kasa_notlari_v4')) || [];
+    function notlariListele() {
+        const liste = document.getElementById('not-listesi');
+        liste.innerHTML = '';
+        notlar.sort((a,b) => b.tarih - a.tarih).forEach(not => {
+            const div = document.createElement('div');
+            div.className = 'not-kart';
+            div.onclick = () => {
+                currentNotId = not.id;
+                document.getElementById('editor-baslik').value = not.baslik;
+                document.getElementById('editor-metin').value = not.metin;
+                document.getElementById('not-editor').style.display = 'flex';
+            };
+            div.innerHTML = `<span class="not-baslik">${not.baslik || 'Başlıksız'}</span><span class="not-ozet">${not.metin || '...'}</span><button onclick="event.stopPropagation(); notSil(${not.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:#f85149;">🗑️</button>`;
+            liste.appendChild(div);
+        });
+    }
+
+    function yeniNotAc() { currentNotId = null; document.getElementById('editor-baslik').value = ''; document.getElementById('editor-metin').value = ''; document.getElementById('not-editor').style.display = 'flex'; }
+    function notKaydet() {
+        const baslik = document.getElementById('editor-baslik').value;
+        const metin = document.getElementById('editor-metin').value;
+        if (currentNotId) {
+            const i = notlar.findIndex(n => n.id === currentNotId);
+            notlar[i] = { ...notlar[i], baslik, metin, tarih: Date.now() };
+        } else {
+            notlar.push({ id: Date.now(), baslik, metin, tarih: Date.now() });
+        }
+        localStorage.setItem('kasa_notlari_v4', JSON.stringify(notlar));
+        notlariListele();
+        document.getElementById('not-editor').style.display = 'none';
+    }
+
+    function notSil(id) {
+        if(confirm("Silinsin mi?")) {
+            notlar = notlar.filter(n => n.id !== id);
+            localStorage.setItem('kasa_notlari_v4', JSON.stringify(notlar));
+            notlariListele();
+        }
+    }
+
+    function editorKapat() { document.getElementById('not-editor').style.display = 'none'; }
+
+    // --- MEDYA ---
+    const request = indexedDB.open("KasaV4DB", 1);
+    request.onupgradeneeded = (e) => { db = e.target.result; db.createObjectStore("medya", { autoIncrement: true }); };
+    request.onsuccess = (e) => { db = e.target.result; };
+
+    function medyaYukle(event) {
+        for (let file of event.target.files) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const item = { data: e.target.result, tip: file.type };
+                db.transaction(["medya"],"readwrite").objectStore("medya").add(item);
+                medyaEkranaEkle(item);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function medyaEkranaEkle(item) {
+        const grid = document.getElementById('galeri-grid');
+        const el = document.createElement(item.tip.startsWith('image') ? 'img' : 'video');
+        if(item.tip.startsWith('video')) el.controls = true;
+        el.src = item.data;
+        grid.appendChild(el);
+    }
+
+    function verileriYukle() {
+        notlariListele();
+        if(!db) return;
+        db.transaction(["medya"],"readonly").objectStore("medya").openCursor().onsuccess = (e) => {
+            const c = e.target.result;
+            if(c) { medyaEkranaEkle(c.value); c.continue(); }
+        };
+    }
+</script>
+</body>
+</html>
