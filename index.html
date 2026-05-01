@@ -9,25 +9,21 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--arka-plan); color: white; height: 100vh; overflow: hidden; }
         
-        /* GİRİŞ VE KURULUM EKRANI */
         .merkez-ekran { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px; }
-        .sifre-kutusu { width: 100%; max-width: 250px; padding: 15px; font-size: 32px; letter-spacing: 10px; text-align: center; border-radius: 15px; border: 2px solid #30363d; background: #0d1117; color: var(--ana-renk); outline: none; margin-bottom: 20px; }
+        /* Şifre kutusu harf ve sayı için güncellendi */
+        .sifre-kutusu { width: 100%; max-width: 280px; padding: 15px; font-size: 24px; text-align: center; border-radius: 15px; border: 2px solid #30363d; background: #0d1117; color: var(--ana-renk); outline: none; margin-bottom: 20px; }
 
-        /* ANA UYGULAMA */
         #ana-uygulama { display: none; flex-direction: column; height: 100vh; }
         .ust-bar { background: var(--panel-arka); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; }
 
-        /* SAYFALAR */
         .sayfa-konteynir { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
         .sayfa { display: none; }
         .sayfa.aktif { display: block; }
 
-        /* NOT KARTLARI */
         .not-kart { background: var(--panel-arka); padding: 15px; border-radius: 12px; border: 1px solid #30363d; margin-bottom: 10px; cursor: pointer; position: relative; }
         .not-baslik { font-weight: bold; font-size: 16px; color: var(--ana-renk); display: block; margin-bottom: 5px; }
         .not-ozet { font-size: 13px; color: var(--metin-gri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 
-        /* NAVİGASYON VE EDİTÖR */
         #not-editor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--arka-plan); z-index: 1000; display: none; flex-direction: column; }
         .alt-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--panel-arka); border-top: 1px solid #30363d; display: flex; justify-content: space-around; align-items: center; }
         .nav-item { color: var(--metin-gri); text-align: center; flex: 1; font-size: 12px; }
@@ -37,17 +33,22 @@
         .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn:active { transform: scale(0.95); }
         .galeri-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-        .galeri-grid img, .galeri-grid video { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; }
+        .galeri-grid img, .galeri-grid video { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; cursor: pointer; }
+
+        #resim-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        #modal-img { max-width: 95%; max-height: 90%; border-radius: 10px; }
+        .modal-kapat { position: absolute; top: 20px; right: 20px; font-size: 30px; color: white; background: none; border: none; }
     </style>
 </head>
 <body>
 
-    <!-- ŞİFRE BELİRLEME EKRANI (İLK KEZ AÇILDIĞINDA) -->
+    <!-- ŞİFRE BELİRLEME EKRANI -->
     <div id="kurulum-ekrani" class="merkez-ekran" style="display: none;">
         <div style="font-size: 50px;">🆕</div>
         <h2>Şifre Belirle</h2>
-        <p style="color: var(--metin-gri);">Uygulama için 4 haneli bir şifre seçin</p>
-        <input type="tel" id="yeni-sifre-input" class="sifre-kutusu" maxlength="4" placeholder="••••" inputmode="numeric">
+        <p style="color: var(--metin-gri); font-size: 14px;">En az 4 karakter (Harf veya Sayı)</p>
+        <!-- inputmode ve maxlength kaldırıldı, type="password" yapıldı -->
+        <input type="password" id="yeni-sifre-input" class="sifre-kutusu" placeholder="Yeni Şifreniz" onkeypress="checkEnter(event, 'kurulum')">
         <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="sifreKaydet()">ŞİFREYİ KAYDET</button>
     </div>
 
@@ -55,11 +56,12 @@
     <div id="giris-ekrani" class="merkez-ekran" style="display: none;">
         <div style="font-size: 50px;">🔒</div>
         <h2>Güvenli Kasa</h2>
-        <input type="tel" id="sifre-input" class="sifre-kutusu" maxlength="4" placeholder="••••" inputmode="numeric">
-        <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="girisYap()">GİRİŞ (Enter)</button>
+        <!-- inputmode ve maxlength kaldırıldı, type="password" yapıldı -->
+        <input type="password" id="sifre-input" class="sifre-kutusu" placeholder="Şifrenizi Girin" onkeypress="checkEnter(event, 'giris')">
+        <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="girisYap()">GİRİŞ</button>
     </div>
 
-    <!-- ANA UYGULAMA -->
+    <!-- ANA UYGULAMA (Geri kalan kısımlar aynı) -->
     <div id="ana-uygulama">
         <div class="ust-bar">
             <span style="font-weight: bold; font-size: 18px;">🛡️ Dosyalarım</span>
@@ -95,10 +97,15 @@
         <textarea id="editor-metin" style="flex:1; padding:20px; background:transparent; border:none; color:white; font-size:16px; outline:none; resize:none;" placeholder="Notun..."></textarea>
     </div>
 
+    <!-- TAM EKRAN RESİM MODALI -->
+    <div id="resim-modal" onclick="this.style.display='none'">
+        <button class="modal-kapat">&times;</button>
+        <img id="modal-img" src="">
+    </div>
+
 <script>
     let db, currentNotId = null;
 
-    // Şifre Sistemi Kontrolü
     window.onload = () => {
         const kayitliSifre = localStorage.getItem('kasa_sifresi');
         if (!kayitliSifre) {
@@ -110,19 +117,29 @@
         }
     };
 
-    // Yeni Şifre Kaydetme
-    function sifreKaydet() {
-        const yeniSifre = document.getElementById('yeni-sifre-input').value;
-        if (yeniSifre.length === 4) {
-            localStorage.setItem('kasa_sifresi', yeniSifre);
-            alert("Şifre başarıyla oluşturuldu!");
-            location.reload(); // Sayfayı yenileyerek giriş ekranına atar
-        } else {
-            alert("Lütfen 4 haneli bir şifre girin.");
+    function checkEnter(event, type) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            if (type === 'kurulum') {
+                sifreKaydet();
+            } else {
+                girisYap();
+            }
         }
     }
 
-    // Giriş Fonksiyonu
+    function sifreKaydet() {
+        const yeniSifre = document.getElementById('yeni-sifre-input').value;
+        // En az 4 karakter kontrolü (Yeni kural)
+        if (yeniSifre.length >= 4) {
+            localStorage.setItem('kasa_sifresi', yeniSifre);
+            alert("Şifre başarıyla güncellendi!");
+            location.reload();
+        } else {
+            alert("Şifreniz en az 4 karakterden oluşmalıdır.");
+        }
+    }
+
     function girisYap() {
         const girilen = document.getElementById('sifre-input').value;
         const asilSifre = localStorage.getItem('kasa_sifresi');
@@ -136,11 +153,6 @@
         }
     }
 
-    // Enter Tuşu Dinleyicileri
-    document.getElementById('sifre-input').addEventListener('keypress', (e) => { if(e.key==='Enter') girisYap(); });
-    document.getElementById('yeni-sifre-input').addEventListener('keypress', (e) => { if(e.key==='Enter') sifreKaydet(); });
-
-    // Sayfa Değiştirme
     function sayfaDegistir(id, el) {
         document.querySelectorAll('.sayfa').forEach(s => s.classList.remove('aktif'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('aktif'));
@@ -163,7 +175,7 @@
                 document.getElementById('editor-metin').value = not.metin;
                 document.getElementById('not-editor').style.display = 'flex';
             };
-            div.innerHTML = `<span class="not-baslik">${not.baslik || 'Başlıksız'}</span><span class="not-ozet">${not.metin || '...'}</span><button onclick="event.stopPropagation(); notSil(${not.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:#f85149;">🗑️</button>`;
+            div.innerHTML = `<span class="not-baslik">${not.baslik || 'Başlıksız'}</span><span class="not-ozet">${not.metin || '...'}</span>`;
             liste.appendChild(div);
         });
     }
@@ -180,17 +192,8 @@
         }
         localStorage.setItem('kasa_notlari_v4', JSON.stringify(notlar));
         notlariListele();
-        document.getElementById('not-editor').style.display = 'none';
+        editorKapat();
     }
-
-    function notSil(id) {
-        if(confirm("Silinsin mi?")) {
-            notlar = notlar.filter(n => n.id !== id);
-            localStorage.setItem('kasa_notlari_v4', JSON.stringify(notlar));
-            notlariListele();
-        }
-    }
-
     function editorKapat() { document.getElementById('not-editor').style.display = 'none'; }
 
     // --- MEDYA ---
@@ -213,8 +216,14 @@
     function medyaEkranaEkle(item) {
         const grid = document.getElementById('galeri-grid');
         const el = document.createElement(item.tip.startsWith('image') ? 'img' : 'video');
-        if(item.tip.startsWith('video')) el.controls = true;
         el.src = item.data;
+        if(item.tip.startsWith('video')) el.controls = true;
+        if(item.tip.startsWith('image')) {
+            el.onclick = () => {
+                document.getElementById('modal-img').src = item.data;
+                document.getElementById('resim-modal').style.display = 'flex';
+            };
+        }
         grid.appendChild(el);
     }
 
