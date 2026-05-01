@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kişisel Kasa v4</title>
+    <title>Kişisel Kasa v6 - Offline</title>
+    <!-- İnternetsiz çalışma için gerekli manifest verisi -->
+    <meta name="theme-color" content="#0d1117">
     <style>
         :root { --ana-renk: #58a6ff; --arka-plan: #0d1117; --panel-arka: #161b22; --metin-gri: #8b949e; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--arka-plan); color: white; height: 100vh; overflow: hidden; }
         
         .merkez-ekran { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px; }
-        /* Şifre kutusu harf ve sayı için güncellendi */
         .sifre-kutusu { width: 100%; max-width: 280px; padding: 15px; font-size: 24px; text-align: center; border-radius: 15px; border: 2px solid #30363d; background: #0d1117; color: var(--ana-renk); outline: none; margin-bottom: 20px; }
 
         #ana-uygulama { display: none; flex-direction: column; height: 100vh; }
@@ -42,26 +43,21 @@
 </head>
 <body>
 
-    <!-- ŞİFRE BELİRLEME EKRANI -->
     <div id="kurulum-ekrani" class="merkez-ekran" style="display: none;">
         <div style="font-size: 50px;">🆕</div>
         <h2>Şifre Belirle</h2>
         <p style="color: var(--metin-gri); font-size: 14px;">En az 4 karakter (Harf veya Sayı)</p>
-        <!-- inputmode ve maxlength kaldırıldı, type="password" yapıldı -->
         <input type="password" id="yeni-sifre-input" class="sifre-kutusu" placeholder="Yeni Şifreniz" onkeypress="checkEnter(event, 'kurulum')">
         <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="sifreKaydet()">ŞİFREYİ KAYDET</button>
     </div>
 
-    <!-- GİRİŞ EKRANI -->
     <div id="giris-ekrani" class="merkez-ekran" style="display: none;">
         <div style="font-size: 50px;">🔒</div>
         <h2>Güvenli Kasa</h2>
-        <!-- inputmode ve maxlength kaldırıldı, type="password" yapıldı -->
         <input type="password" id="sifre-input" class="sifre-kutusu" placeholder="Şifrenizi Girin" onkeypress="checkEnter(event, 'giris')">
         <button class="btn" style="background: var(--ana-renk); color: white; width: 250px;" onclick="girisYap()">GİRİŞ</button>
     </div>
 
-    <!-- ANA UYGULAMA (Geri kalan kısımlar aynı) -->
     <div id="ana-uygulama">
         <div class="ust-bar">
             <span style="font-weight: bold; font-size: 18px;">🛡️ Dosyalarım</span>
@@ -87,7 +83,6 @@
         </div>
     </div>
 
-    <!-- EDİTÖR -->
     <div id="not-editor">
         <div style="padding:15px; display:flex; justify-content:space-between; background:var(--panel-arka)">
             <button class="btn" onclick="editorKapat()">⬅ Geri</button>
@@ -97,13 +92,19 @@
         <textarea id="editor-metin" style="flex:1; padding:20px; background:transparent; border:none; color:white; font-size:16px; outline:none; resize:none;" placeholder="Notun..."></textarea>
     </div>
 
-    <!-- TAM EKRAN RESİM MODALI -->
     <div id="resim-modal" onclick="this.style.display='none'">
         <button class="modal-kapat">&times;</button>
         <img id="modal-img" src="">
     </div>
 
 <script>
+    // --- OFFLINE ÇALIŞMA AYARI (Service Worker) ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log("SW hatası:", err));
+        });
+    }
+
     let db, currentNotId = null;
 
     window.onload = () => {
@@ -120,17 +121,12 @@
     function checkEnter(event, type) {
         if (event.key === "Enter") {
             event.preventDefault();
-            if (type === 'kurulum') {
-                sifreKaydet();
-            } else {
-                girisYap();
-            }
+            if (type === 'kurulum') { sifreKaydet(); } else { girisYap(); }
         }
     }
 
     function sifreKaydet() {
         const yeniSifre = document.getElementById('yeni-sifre-input').value;
-        // En az 4 karakter kontrolü (Yeni kural)
         if (yeniSifre.length >= 4) {
             localStorage.setItem('kasa_sifresi', yeniSifre);
             alert("Şifre başarıyla güncellendi!");
@@ -161,7 +157,6 @@
         document.getElementById('yeni-not-btn').style.display = (id === 'notlar' ? 'flex' : 'none');
     }
 
-    // --- NOTLAR ---
     let notlar = JSON.parse(localStorage.getItem('kasa_notlari_v4')) || [];
     function notlariListele() {
         const liste = document.getElementById('not-listesi');
@@ -196,7 +191,6 @@
     }
     function editorKapat() { document.getElementById('not-editor').style.display = 'none'; }
 
-    // --- MEDYA ---
     const request = indexedDB.open("KasaV4DB", 1);
     request.onupgradeneeded = (e) => { db = e.target.result; db.createObjectStore("medya", { autoIncrement: true }); };
     request.onsuccess = (e) => { db = e.target.result; };
